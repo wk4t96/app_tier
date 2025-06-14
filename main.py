@@ -18,8 +18,8 @@ aws_secret_access_key = os.getenv("AWS_SECRET_ACCESS_KEY")
 aws_region = os.getenv("AWS_DEFAULT_REGION", "ap-northeast-2") # 預設區域為 ap-northeast-2
 
 # SQS 佇列 URL
-request_queue_url = 'https://sqs.ap-northeast-2.amazonaws.com/881892165012/request-queue-yjche.fifo'
-response_queue_url = 'https://sqs.ap-northeast-2.amazonaws.com/881892165012/response-queue-yjche.fifo'
+request_queue_url = 'https://sqs.ap-northeast-2.amazonaws.com/881892165012/request-queue-yjche'
+response_queue_url = 'https://sqs.ap-northeast-2.amazonaws.com/881892165012/response-queue-yjche'
 
 # 結果 S3 桶名稱
 results_s3_bucket = 'output-bucket-yjche'
@@ -232,8 +232,8 @@ def process_image(s3_object_path):
         sqs_client.send_message(
             QueueUrl=response_queue_url,
             MessageBody=json.dumps(response_data),
-            MessageDeduplicationId=s.key, # 對於 FIFO 佇列，使用唯一的圖片名作為去重ID
-            MessageGroupId='ImageClassificationResults' # 對於 FIFO 佇列，需要 MessageGroupId
+            # MessageDeduplicationId=s.key, # 對於 FIFO 佇列，使用唯一的圖片名作為去重ID
+            # MessageGroupId='ImageClassificationResults' # 對於 FIFO 佇列，需要 MessageGroupId
         )
         print(f"SQS Response: Sent classification result for '{s.key}' to response queue SUCCESSFULLY.", flush=True) # <-- 修改日誌訊息
     except ClientError as e:
