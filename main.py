@@ -126,22 +126,25 @@ def delete_message(receipt_handle):
 
 def put_classification(image_key, classification):
     """
-    將分類結果以 image_key 命名，寫入 results_s3_bucket 為 JSON 檔案。
-    JSON 內容包含圖片名與分類結果。
+    將分類結果寫入 results_s3_bucket 為 JSON 檔案。
+    這個 JSON 檔案將包含圖片名、分類結果。
     """
     result_data = {
         'ImageName': image_key,
         'Classification': classification,
     }
-    result_object_key = f"results/{image_key}.json"  # e.g., results/test_12.JPEG.json
+    
+    # S3儲存的檔名
+    s3_result_key = f"{image_key.replace('.', '_')}_{classification.replace(' ', '_')}.json"
+
     try:
-        s3.put_object(
+        s3_client.put_object(
             Bucket=results_s3_bucket,
-            Key=result_object_key,
-            Body=json.dumps(result_data),
-            ContentType="application/json"
+            Key=s3_result_key,
+            Body=json.dumps(result_data), # 將字典轉為 JSON 字串
+            ContentType='application/json'
         )
-        print(f"[Main] 分類結果已儲存至 S3: s3://{results_s3_bucket}/{result_object_key}")
+        print(f"S3 Results: Successfully stored classification for '{image_key}' as '{s3_result_key}' in '{results_s3_bucket}'.", flush=True)
     except ClientError as e:
         print(f"ERROR: AWS S3 Client Error when storing result for '{image_key}': {e}", flush=True)
     except Exception as e:
@@ -180,7 +183,7 @@ def process_image(s3_object_path):
         print(f"DEBUG: Classification Result for '{s.key}': '{classification_result}'.", flush=True) # <-- 新增日誌
     except Exception as e:
         print(f"ERROR: Image classification failed for '{s.key}': {e}", flush=True)
-        # 分類失敗也應該記錄，但我們可能仍想把錯誤訊息寫入 DynamoDB 或 S3
+        # 分類失敗也應該記錄，但我們可能仍想把錯誤訊息寫入 S3
         classification_result = f"error: {e}" # 將錯誤作為分類結果
 
     # 刪除本地暫存檔案
@@ -244,7 +247,7 @@ def process_image(s3_object_path):
     # --- SQS 回應發送區塊結束 ---
 
     print(f"DEBUG: Exiting process_image for {s.key}.", flush=True) # <-- 新增日誌
-
+  
 
 def run_worker_loop():
     """主工作者循環，持續從 SQS 接收並處理訊息"""
