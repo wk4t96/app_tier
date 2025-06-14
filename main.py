@@ -126,26 +126,22 @@ def delete_message(receipt_handle):
 
 def put_classification(image_key, classification):
     """
-    將分類結果寫入 results_s3_bucket 為 JSON 檔案。
-    這個 JSON 檔案將包含圖片名、分類結果。
+    將分類結果以 image_key 命名，寫入 results_s3_bucket 為 JSON 檔案。
+    JSON 內容包含圖片名與分類結果。
     """
-    
     result_data = {
         'ImageName': image_key,
         'Classification': classification,
     }
-    
-    # S3儲存的檔名
-    s3_result_key = f"{image_key.replace('.', '_')}_{classification.replace(' ', '_')}.json"
-
+    result_object_key = f"results/{image_key}.json"  # e.g., results/test_12.JPEG.json
     try:
-        s3_client.put_object(
+        s3.put_object(
             Bucket=results_s3_bucket,
-            Key=s3_result_key,
-            Body=json.dumps(result_data), # 將字典轉為 JSON 字串
-            ContentType='application/json'
+            Key=result_object_key,
+            Body=json.dumps(result_data),
+            ContentType="application/json"
         )
-        print(f"S3 Results: Successfully stored classification for '{image_key}' as '{s3_result_key}' in '{results_s3_bucket}'.", flush=True)
+        print(f"[Main] 分類結果已儲存至 S3: s3://{results_s3_bucket}/{result_object_key}")
     except ClientError as e:
         print(f"ERROR: AWS S3 Client Error when storing result for '{image_key}': {e}", flush=True)
     except Exception as e:
